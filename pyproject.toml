@@ -1,0 +1,24 @@
+[project]
+name = "spritoglobin_dx"
+version = "0.0.0"
+description = "Sprite viewer for Bowser's Inside Story DX, and other 3DS M&L games."
+authors = [
+    {name = "ThePurpleAnon"}
+]
+license = {text = "GPL-3.0-or-later"}
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "pyside6 (==6.10.2)",
+    "pillow (==12.1.1)",
+    "opencv-python (==4.13.0.92)",
+    "numpy (==2.4.2)",
+    "pyside6-addons (==6.10.2)",
+    "pyside6-essentials (==6.10.2)",
+    "shiboken6 (==6.10.2)",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

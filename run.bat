@@ -1,1 +1,1 @@
-python3 -m spritoglobin
+python3 -m spritoglobin_dx
