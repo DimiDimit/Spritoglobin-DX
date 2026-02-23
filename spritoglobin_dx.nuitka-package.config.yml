@@ -1,4 +1,5 @@
 - module-name: "spritoglobin_dx"
   data-files:
-    - "files"
-    - "lang"
+    - dirs:
+      - "files"
+      - "lang"
