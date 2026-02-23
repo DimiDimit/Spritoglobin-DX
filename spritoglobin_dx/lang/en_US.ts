@@ -16,7 +16,7 @@
     <message>
         <location filename="../main.py" line="1970"/>
         <source>MainWindow.ColorAnimationTimeline.LayerInfoPersistant</source>
-        <translation>Persistant: {0}</translation>
+        <translation>Persistent: {0}</translation>
     </message>
     <message>
         <location filename="../main.py" line="1971"/>
