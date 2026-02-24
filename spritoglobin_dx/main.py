@@ -337,6 +337,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
         string = QtWidgets.QLabel(self.strings["ColorAnimSelectorTitle"])
+        string.setBuddy(self.color_anim_list_box)
         string.setEnabled(False)
 
         global_color_anim = QtWidgets.QWidget()
@@ -372,14 +373,15 @@ class MainWindow(QtWidgets.QMainWindow):
         sprite_part_info_layout = QtWidgets.QGridLayout(sprite_part_info)
         sprite_part_info_layout.setContentsMargins(0, 0, 0, 0)
 
-        string = QtWidgets.QLabel(self.strings["SpritePartSetSelectorTitle"])
-        string.setEnabled(False)
-        sprite_part_info_layout.addWidget(string, 0, 0, 1, -1)
-
         self.sprite_part_set_list_box = QtWidgets.QComboBox()
         self.sprite_part_set_list_box.currentIndexChanged.connect(self.change_sprite_parts)
         self.sprite_part_set_list_box.setSizePolicy(QtWidgets.QSizePolicy.Preferred, self.sprite_part_set_list_box.sizePolicy().verticalPolicy())
         sprite_part_info_layout.addWidget(self.sprite_part_set_list_box, 1, 0, 1, -1)
+
+        string = QtWidgets.QLabel(self.strings["SpritePartSetSelectorTitle"])
+        string.setBuddy(self.sprite_part_set_list_box)
+        string.setEnabled(False)
+        sprite_part_info_layout.addWidget(string, 0, 0, 1, -1)
 
         self.sprite_part_viewer = self.InteractiveGraphicsWindow(
             font = mono_font,
@@ -395,14 +397,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sprite_part_viewer.setMinimumHeight(255)
         sprite_part_info_layout.addWidget(self.sprite_part_viewer, 2, 0, 1, -1)
 
-        string = QtWidgets.QLabel(self.strings["SpritePartSelectorTitle"])
-        string.setEnabled(False)
-        sprite_part_info_layout.addWidget(string, 3, 0, 1, -1)
-
         self.sprite_part_list_box = QtWidgets.QComboBox()
         self.sprite_part_list_box.currentIndexChanged.connect(self.change_highlighted_sprite_part)
         self.sprite_part_list_box.setSizePolicy(QtWidgets.QSizePolicy.Preferred, self.sprite_part_list_box.sizePolicy().verticalPolicy())
         sprite_part_info_layout.addWidget(self.sprite_part_list_box, 4, 0, 1, -1)
+
+        string = QtWidgets.QLabel(self.strings["SpritePartSelectorTitle"])
+        string.setBuddy(self.sprite_part_list_box)
+        string.setEnabled(False)
+        sprite_part_info_layout.addWidget(string, 3, 0, 1, -1)
 
         self.sprite_part_graphics_buffer_info_text = QtWidgets.QLabel()
         sprite_part_info_layout.addWidget(self.sprite_part_graphics_buffer_info_text, 5, 0, 1, -1, alignment = QtCore.Qt.AlignmentFlag.AlignCenter)
@@ -473,10 +476,12 @@ class MainWindow(QtWidgets.QMainWindow):
         main_layout.addWidget(line, 3, 0, 1, 2)
 
         string = QtWidgets.QLabel(self.strings["ObjectSelectorTitle"])
+        string.setBuddy(self.obj_list_box)
         string.setEnabled(False)
         main_layout.addWidget(string, 0, 0, 1, 2)
 
         string = QtWidgets.QLabel(self.strings["AnimationSelectorTitle"])
+        string.setBuddy(self.anim_list_box)
         string.setEnabled(False)
         main_layout.addWidget(string, 4, 0, 1, 1)
 
@@ -486,6 +491,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setCentralWidget(main)
         self.set_theme(update = False)
+
+
+        play_action = QtGui.QAction(self)
+        play_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space))
+        play_action.triggered.connect(self.timeline_toggle_playback)
+        self.addAction(play_action)
+
 
         self.change_file()
     
@@ -962,7 +974,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.color_anim_list_box.currentRow() != 0 and object_properties["has_color_data"] and self.color_anim_list_box.currentItem() is not None:
             color_anim_index = int(self.color_anim_list_box.currentItem().text())
 
-        img = self.obj_data.get_sprite_with_offset(
+        img, size, offset = self.obj_data.get_sprite_with_offset(
             object_name      = self.obj_list_box.currentText(), 
             animation_index  = self.anim_list_box.currentRow(),
             color_anim_index = color_anim_index,
@@ -983,7 +995,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sprite_viewer.bounding_boxes = bounding_boxes
 
         if img is not None:
-            img, size, offset = img
             self.sprite_viewer.draw_image(QtGui.QImage(img, *size, QtGui.QImage.Format_RGBA8888), offset)
         else:
             self.sprite_viewer.draw_image(None, (0, 0))
@@ -1182,6 +1193,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.obj_data.set_timers(time, animation_timer = True)
 
         self.update_sprite_viewer(force = True)
+    
+    def timeline_toggle_playback(self):
+        play = not self.animation_timer_going
+
+        self.sprite_anim_toggle_playback(play)
+        self.sprite_color_anim_toggle_playback(play)
     
     def sprite_anim_toggle_playback(self, play):
         if play:
@@ -1988,11 +2005,13 @@ class MainWindow(QtWidgets.QMainWindow):
             self.layer_info_text_2 = QtWidgets.QLabel()
             self.layer_info_text_2.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
-            string_color = QtWidgets.QLabel(self.strings["LayerInfoColorRGB"])
-            string_alpha = QtWidgets.QLabel(self.strings["LayerInfoColorA"])
-
             self.layer_info_color = QtWidgets.QLabel()
             self.layer_info_alpha = QtWidgets.QLabel()
+
+            string_color = QtWidgets.QLabel(self.strings["LayerInfoColorRGB"])
+            string_color.setBuddy(self.layer_info_color)
+            string_alpha = QtWidgets.QLabel(self.strings["LayerInfoColorA"])
+            string_alpha.setBuddy(self.layer_info_alpha)
 
             layer_info_layout.addWidget(self.layer_info_text_1, 0, 0, 1, -1, alignment = QtCore.Qt.AlignmentFlag.AlignCenter)
             layer_info_layout.addWidget(self.layer_info_text_2, 1, 0, 1, -1, alignment = QtCore.Qt.AlignmentFlag.AlignCenter)
@@ -2544,22 +2563,27 @@ class MainWindow(QtWidgets.QMainWindow):
             layout.addWidget(self.gif_timer_text, 9, 2, alignment = QtCore.Qt.AlignmentFlag.AlignRight)
 
             string = QtWidgets.QLabel(self.strings["AnimationOptionFramerateTitle"])
+            string.setBuddy(self.framerate_choose_box)
             string.setEnabled(False)
             layout.addWidget(string, 0, 0)
 
             string = QtWidgets.QLabel(self.strings["AnimationOptionColorAnimTitle"])
+            string.setBuddy(self.color_anim_list_box)
             string.setEnabled(False)
             layout.addWidget(string, 0, 1)
 
             string = QtWidgets.QLabel(self.strings["ExportAnimationListTitle"])
+            string.setBuddy(self.anim_list_box)
             string.setEnabled(False)
             layout.addWidget(string, 2, 0, 1, 2)
 
             string = QtWidgets.QLabel(self.strings["AnimationListDataCurrentAnim"])
+            string.setBuddy(self.anim_choose_list_box)
             string.setEnabled(False)
             layout.addWidget(string, 7, 0)
 
             string = QtWidgets.QLabel(self.strings["AnimationListDataCurrentLoops"])
+            string.setBuddy(self.loop_choose_spin_box)
             string.setEnabled(False)
             layout.addWidget(string, 7, 1)
 
@@ -2610,14 +2634,13 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.color_anim_list_box.currentIndex() != 0:
                 color_animation = int(self.color_anim_list_box.currentText())
 
-            img = self.obj_data.get_sprite_with_offset(
+            img, size, offset = self.obj_data.get_sprite_with_offset(
                 object_name      = self.obj_data.cached_object.name, 
                 animation_index  = anim,
                 color_anim_index = color_animation,
             )
             
             if img is not None:
-                img, size, offset = img
                 self.gif_preview.draw_image(QtGui.QImage(img, *size, QtGui.QImage.Format_RGBA8888), offset)
             else:
                 self.gif_preview.draw_image(None, (0, 0))
@@ -2807,19 +2830,15 @@ class MainWindow(QtWidgets.QMainWindow):
                 )
 
                 for i in range(animation_properties["length"] // advance_amt):
-                    img_raw = self.obj_data.get_sprite_with_offset(
+                    img, (w, h), (x, y) = self.obj_data.get_sprite_with_offset(
                         object_name      = object_name, 
                         animation_index  = anim_num,
                         color_anim_index = color_animation,
                     )
 
-                    if img_raw is None:
-                        image_data.append([img_raw, (0, 0), (0, 0)])
-                    else:
-                        img, (w, h), (x, y) = img_raw
+                    image_data.append([img, (w, h), (x, y)])
 
-                        image_data.append([img, (w, h), (x, y)])
-
+                    if img is not None:
                         min_x, max_x, min_y, max_y = [
                             min(min_x, -x,    ), # left
                             max(max_x, -x + w,), # right

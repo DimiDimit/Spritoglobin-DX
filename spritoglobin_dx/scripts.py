@@ -71,7 +71,7 @@ def get_sprite_graphic(obj_anim_data, graph_file, current_anim_index, color_anim
         else:
             full_bounding_box = min_x, max_x, min_y, max_y
     
-    img = get_sprite_part_set_graphic(
+    img, (graph_w, graph_h), (offset_x, offset_y) = get_sprite_part_set_graphic(
         obj_anim_data          = obj_anim_data,
         graph_file             = graph_file,
         first_part             = frame_data.first_part,
@@ -84,8 +84,7 @@ def get_sprite_graphic(obj_anim_data, graph_file, current_anim_index, color_anim
         current_time_anim      = current_time_anim,
         current_time_color     = current_time_color,
     )
-    if img is None: return None
-    else: img, (graph_w, graph_h), (offset_x, offset_y) = img
+    if img is None: return None, (0, 0), (0, 0)
     img = numpy.array(bytearray(img)).reshape(graph_h, graph_w, 4)
 
     bounding_box = [
@@ -148,7 +147,7 @@ def get_sprite_part_set_graphic(obj_anim_data, graph_file, first_part, total_par
     graph_w, graph_h = max_x - min_x, max_y - min_y
 
     if graph_w < 1 or graph_h < 1:
-        return None
+        return None, (0, 0), (0, 0)
     
     img = numpy.zeros((graph_h, graph_w, 4), dtype=numpy.uint8)
 
