@@ -493,10 +493,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.set_theme(update = False)
 
 
-        play_action = QtGui.QAction(self)
-        play_action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space))
-        play_action.triggered.connect(self.timeline_toggle_playback)
-        self.addAction(play_action)
+        # Space = Play/Pause Animation Timeline
+        action = QtGui.QAction(self)
+        action.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Space))
+        action.triggered.connect(self.timeline_toggle_playback)
+        self.addAction(action)
+
+        # Shift+Space = Play/Pause Color Animation Timeline
+        action = QtGui.QAction(self)
+        action.setShortcut(QtGui.QKeySequence(QtCore.Qt.ShiftModifier | QtCore.Qt.Key_Space))
+        action.triggered.connect(self.color_timeline_toggle_playback)
+        self.addAction(action)
 
 
         self.change_file()
@@ -1188,17 +1195,14 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
         self.update_sprite_viewer(force = True)
+    
+    def timeline_toggle_playback(self):
+        self.sprite_color_anim_timeline.toggle_playback()
 
     def set_animation_timer(self, time):
         self.obj_data.set_timers(time, animation_timer = True)
 
         self.update_sprite_viewer(force = True)
-    
-    def timeline_toggle_playback(self):
-        play = not self.animation_timer_going
-
-        self.sprite_anim_toggle_playback(play)
-        self.sprite_color_anim_toggle_playback(play)
     
     def sprite_anim_toggle_playback(self, play):
         if play:
@@ -1243,6 +1247,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sprite_color_anim_timeline.set_time(0)
 
         self.update_sprite_viewer(force = True)
+
+
+    def color_timeline_toggle_playback(self):
+        if self.color_anim_list_box.currentRow() == 0 and self.color_anim_list_box.count() > 1:
+            self.color_anim_list_box.setCurrentRow(1)
+
+        self.global_color_anim_timeline.toggle_playback()
 
     def set_color_timer(self, time):
         self.obj_data.set_timers(time, color_timer = True)
