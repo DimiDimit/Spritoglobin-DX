@@ -2,13 +2,8 @@ import numpy
 import struct
 from io import BytesIO
 
+from spritoglobin_dx.constants import *
 from spritoglobin_dx.scripts import SIZING_TABLE, get_sprite_graphic, get_sprite_part_set_graphic, draw_part
-
-
-GAME_IDS_THAT_USE_BG4 = ["ML5", "ML1R", "ML3R"]
-GAME_IDS_THAT_USE_NORMAL_MAPS = ["ML1R", "ML3R"]
-GAME_IDS_THAT_USE_MATRIX_INVERSION = ["ML1R", "ML3R"]
-GAME_IDS_THAT_USE_BOUNDING_BOXES = ["ML3R"]
 
 
 class InvalidObjectFileError(Exception):

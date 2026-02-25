@@ -12,10 +12,6 @@ from spritoglobin_dx.constants import *
 from spritoglobin_dx.scripts import create_transform_demo
 
 
-GAME_IDS_THAT_USE_DX = ["ML4", "ML5", "ML1R", "ML3R"]
-GAME_IDS_THAT_USE_LOW_FRAMERATE = ["ML3R"]
-
-
 def main():
     app = QtWidgets.QApplication(sys.argv)
 
@@ -737,7 +733,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.color_anim_list_box.setCurrentRow(0)
 
-        if self.current_game_id in GAME_IDS_THAT_USE_DX or self.current_game_id is None:
+        if self.current_game_id in GAME_IDS_THAT_ARE_ON_3DS or self.current_game_id is None:
             self.current_window_icon = QtGui.QIcon(str(FILES_DIR / 'ico_sprito_dx.ico'))
             self.success_jingle.setSource(QtCore.QUrl.fromLocalFile(FILES_DIR / "snd_success_dx.wav"))
         else:
@@ -2329,11 +2325,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.parent = parent
             self.game_title_strings = game_title_strings
 
-            self.game_ids = [
-                "ML5",
-                "ML1R",
-                "ML3R",
-            ]
+            self.game_ids = GAME_IDS_THAT_ARE_CURRENTLY_SUPPORTED
 
             self.current_window_icon = current_window_icon
 
