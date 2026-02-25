@@ -151,7 +151,7 @@ class ObjFile:
                     if not timer >= frame_data.anim_timer:
                         frame_index = i
                         break
-            except NameError:
+            except AttributeError:
                 frame_index = 0
         
         if animation_index is None:
@@ -218,8 +218,13 @@ class ObjFile:
                     if not timer >= frame_data.anim_timer:
                         frame_index = i
                         break
-            except NameError:
+                
+                animation_timer = self.animation_timer
+                color_timer = self.color_timer
+            except AttributeError:
                 frame_index = 0
+                animation_timer = 0
+                color_timer = 0
         
         return get_sprite_graphic(
             obj_anim_data       = obj_anim_data, 
@@ -227,8 +232,8 @@ class ObjFile:
             current_anim_index  = animation_index,
             color_anim_index    = color_anim_index,
             current_frame_index = frame_index,
-            current_time_anim   = self.animation_timer,
-            current_time_color  = self.color_timer,
+            current_time_anim   = animation_timer,
+            current_time_color  = color_timer,
             color_data          = color_data,
         )
     

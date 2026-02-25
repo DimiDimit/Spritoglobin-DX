@@ -586,6 +586,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def change_lang(self, lang_key, reset_ui = True):
         self.settings["language"] = lang_key
 
+        self.translator_fallback = QtCore.QTranslator()
+        if self.translator_fallback.load(str(LANG_DIR / 'en_US.qm')):
+            self.parent.installTranslator(self.translator_fallback)
+
         self.translator = QtCore.QTranslator()
         if self.translator.load(str(LANG_DIR / f'{self.settings["language"]}.qm')):
             self.parent.installTranslator(self.translator)
@@ -1519,7 +1523,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 qp.setPen(pen)
                 qp.drawRect(x_pos - (thickness / 2), y_pos - (thickness / 2), x_size + thickness, y_size + thickness)
 
-                pen.setColor(QtGui.QColor(THEME_COLORS["K_COLOR_0"]))
+                if not self.disable_controls:
+                    pen.setColor(QtGui.QColor(THEME_COLORS["K_COLOR_0"]))
+                else:
+                    pen.setColor(QtGui.QColor(THEME_COLORS["P_COLOR_0"]))
                 qp.setPen(pen)
                 qp.drawRect(x_pos - (thickness / 2) - thickness, y_pos - (thickness / 2) - thickness, x_size + (thickness * 3), y_size + (thickness * 3))
                 
@@ -2472,10 +2479,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.strings = {
                 "ExportWindowTitle":               self.tr("MainWindow.GifExportWindow.ExportWindowTitle"),
                 "ExportAnimationListTitle":        self.tr("MainWindow.GifExportWindow.ExportAnimationListTitle"),
-                "ExportAnimationListAdd":          self.tr("MainWindow.GifExportWindow.ExportAnimationListAdd"),
-                "ExportAnimationListRemove":       self.tr("MainWindow.GifExportWindow.ExportAnimationListRemove"),
-                "ExportAnimationListMoveUp":       self.tr("MainWindow.GifExportWindow.ExportAnimationListMoveUp"),
-                "ExportAnimationListMoveDown":     self.tr("MainWindow.GifExportWindow.ExportAnimationListMoveDown"),
                 "ExportAnimationListData":         self.tr("MainWindow.GifExportWindow.ExportAnimationListData"),
                 "ExportAnimationListDataWithLoop": self.tr("MainWindow.GifExportWindow.ExportAnimationListDataWithLoop"),
                 "AnimationOptionFramerateTitle":   self.tr("MainWindow.GifExportWindow.AnimationOptionFramerateTitle"),
@@ -2516,16 +2519,20 @@ class MainWindow(QtWidgets.QMainWindow):
             self.anim_list_box = QtWidgets.QListWidget()
             self.anim_list_box.currentRowChanged.connect(self.update_anim_options)
 
-            self.add_button = QtWidgets.QPushButton(self.strings["ExportAnimationListAdd"])
+            self.add_button = QtWidgets.QPushButton()
+            self.add_button.setIcon(grab_icon(9))
             self.add_button.clicked.connect(self.add_anim)
 
-            self.remove_button = QtWidgets.QPushButton(self.strings["ExportAnimationListRemove"])
+            self.remove_button = QtWidgets.QPushButton()
+            self.remove_button.setIcon(grab_icon(10))
             self.remove_button.clicked.connect(self.remove_anim)
 
-            self.move_up_button = QtWidgets.QPushButton(self.strings["ExportAnimationListMoveUp"])
+            self.move_up_button = QtWidgets.QPushButton()
+            self.move_up_button.setIcon(grab_icon(11))
             self.move_up_button.clicked.connect(self.move_anim_up)
 
-            self.move_down_button = QtWidgets.QPushButton(self.strings["ExportAnimationListMoveDown"])
+            self.move_down_button = QtWidgets.QPushButton()
+            self.move_down_button.setIcon(grab_icon(12))
             self.move_down_button.clicked.connect(self.move_anim_down)
 
             self.anim_choose_list_box = QtWidgets.QComboBox()
@@ -2560,48 +2567,48 @@ class MainWindow(QtWidgets.QMainWindow):
             self.gif_timer_text = QtWidgets.QLabel(f"{0:3} / {0:3}")
             self.gif_timer_text.setFont(mono_font)
 
-            layout.addWidget(self.framerate_choose_box, 1, 0)
-            layout.addWidget(self.color_anim_list_box, 1, 1)
-            layout.addWidget(self.anim_list_box, 3, 0, 1, 2)
+            layout.addWidget(self.framerate_choose_box, 1, 0, 1, 2)
+            layout.addWidget(self.color_anim_list_box, 1, 2, 1, 2)
+            layout.addWidget(self.anim_list_box, 3, 0, 1, 4)
             layout.addWidget(self.add_button, 4, 0)
             layout.addWidget(self.remove_button, 4, 1)
-            layout.addWidget(self.move_up_button, 5, 0)
-            layout.addWidget(self.move_down_button, 5, 1)
-            layout.addWidget(self.anim_choose_list_box, 8, 0)
-            layout.addWidget(self.loop_choose_spin_box, 8, 1)
-            layout.addWidget(self.export_button, 9, 0, 1, 2, alignment = QtCore.Qt.AlignmentFlag.AlignCenter)
-            layout.addWidget(self.gif_preview, 0, 2, 9, 1)
-            layout.addWidget(self.gif_timer_text, 9, 2, alignment = QtCore.Qt.AlignmentFlag.AlignRight)
+            layout.addWidget(self.move_up_button, 4, 2)
+            layout.addWidget(self.move_down_button, 4, 3)
+            layout.addWidget(self.anim_choose_list_box, 8, 0, 1, 2)
+            layout.addWidget(self.loop_choose_spin_box, 8, 2, 1, 2)
+            layout.addWidget(self.export_button, 9, 0, 1, 4, alignment = QtCore.Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(self.gif_preview, 0, 4, 9, 1)
+            layout.addWidget(self.gif_timer_text, 9, 4, alignment = QtCore.Qt.AlignmentFlag.AlignRight)
 
             string = QtWidgets.QLabel(self.strings["AnimationOptionFramerateTitle"])
             string.setBuddy(self.framerate_choose_box)
             string.setEnabled(False)
-            layout.addWidget(string, 0, 0)
+            layout.addWidget(string, 0, 0, 1, 2)
 
             string = QtWidgets.QLabel(self.strings["AnimationOptionColorAnimTitle"])
             string.setBuddy(self.color_anim_list_box)
             string.setEnabled(False)
-            layout.addWidget(string, 0, 1)
+            layout.addWidget(string, 0, 2, 1, 2)
 
             string = QtWidgets.QLabel(self.strings["ExportAnimationListTitle"])
             string.setBuddy(self.anim_list_box)
             string.setEnabled(False)
-            layout.addWidget(string, 2, 0, 1, 2)
+            layout.addWidget(string, 2, 0, 1, 4)
 
             string = QtWidgets.QLabel(self.strings["AnimationListDataCurrentAnim"])
             string.setBuddy(self.anim_choose_list_box)
             string.setEnabled(False)
-            layout.addWidget(string, 7, 0)
+            layout.addWidget(string, 7, 0, 1, 2)
 
             string = QtWidgets.QLabel(self.strings["AnimationListDataCurrentLoops"])
             string.setBuddy(self.loop_choose_spin_box)
             string.setEnabled(False)
-            layout.addWidget(string, 7, 1)
+            layout.addWidget(string, 7, 2, 1, 2)
 
             line = QtWidgets.QFrame()
             line.setFrameShape(QtWidgets.QFrame.HLine)
             line.setFrameShadow(QtWidgets.QFrame.Sunken)
-            layout.addWidget(line, 6, 0, 1, 2)
+            layout.addWidget(line, 6, 0, 1, 4)
 
             self.setLayout(layout)
 
