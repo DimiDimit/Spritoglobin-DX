@@ -156,12 +156,14 @@ class MainWindow(QtWidgets.QMainWindow):
         menu_bar_file = menu_bar.addMenu(self.strings["MenuBarFileTitle"])
 
         menu_bar_file.addAction(
+            grab_icon(14),
             self.strings["MenuBarFileOpenOption"],
             QtGui.QKeySequence.StandardKey.Open,
             self.open_file,
         )
 
         menu_bar_file.addAction(
+            grab_icon(13),
             self.strings["MenuBarFileCloseOption"],
             QtGui.QKeySequence.StandardKey.Close,
             self.close_file,
@@ -170,12 +172,14 @@ class MainWindow(QtWidgets.QMainWindow):
         menu_bar_file.addSeparator() # -----------------------------------------
 
         menu_bar_file.addAction(
+            grab_icon(16),
             self.strings["MenuBarFileQuickExportOption"],
             QtGui.QKeySequence.StandardKey.Save,
             partial(self.export_file, True),
         )
 
         menu_bar_file.addAction(
+            grab_icon(16),
             self.strings["MenuBarFileExportOption"],
             QtGui.QKeySequence.StandardKey.SaveAs,
             partial(self.export_file, False),
@@ -184,6 +188,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu_bar_file.addSeparator() # -----------------------------------------
 
         menu_bar_file.addAction(
+            grab_icon(15),
             self.strings["MenuBarFileQuitOption"],
             QtGui.QKeySequence.StandardKey.Quit,
             QtWidgets.QApplication.quit,
@@ -2339,6 +2344,7 @@ class MainWindow(QtWidgets.QMainWindow):
             layout = QtWidgets.QGridLayout()
 
             self.choose_file_button = QtWidgets.QPushButton(self.strings["ImportChooseFileButton"])
+            self.choose_file_button.setIcon(grab_icon(14))
             self.choose_file_button.clicked.connect(self.import_obj_file)
 
             self.file_info_text = QtWidgets.QLabel(f"\n{self.strings["FileInfoNone"]}\n")
@@ -2348,6 +2354,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sort_contents_toggle.setVisible(False)
 
             self.import_button = QtWidgets.QPushButton(self.strings["ImportAcceptButton"])
+            self.import_button.setIcon(grab_icon(1))
             self.import_button.clicked.connect(self.finalize)
             self.import_button.setEnabled(False)
 
@@ -2536,6 +2543,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loop_choose_spin_box.valueChanged.connect(self.change_current_anim_data)
 
             self.export_button = QtWidgets.QPushButton(self.strings["ExportAcceptButton"])
+            self.export_button.setIcon(grab_icon(16))
             self.export_button.clicked.connect(self.export_gif)
 
             mono_font = QtGui.QFont()
