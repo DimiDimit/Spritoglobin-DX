@@ -1,9 +1,9 @@
 import configparser
-import numpy
 import os
 import sys
 from functools import partial
 
+import numpy
 from PIL import Image
 from PySide6 import QtWidgets, QtGui, QtMultimedia
 

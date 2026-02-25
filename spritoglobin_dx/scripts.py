@@ -1,7 +1,7 @@
 import struct
-import numpy
 
 import cv2
+import numpy
 
 
 SWIZZLE_TABLE = numpy.array([
