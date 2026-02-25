@@ -2676,11 +2676,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
         def add_anim(self):
             anim, count = self.current_anim_list[self.anim_list_box.currentRow()]
-            self.current_anim_list.append([anim, 1])
+            insertion_point = self.anim_list_box.currentRow() + 1
+
+            self.current_anim_list.insert(insertion_point, [anim, 1])
 
             self.update_anim_list_box_entries()
 
-            self.anim_list_box.setCurrentRow(self.anim_list_box.count() - 1)
+            self.anim_list_box.setCurrentRow(insertion_point)
         
         def remove_anim(self):
             del self.current_anim_list[self.anim_list_box.currentRow()]
