@@ -325,12 +325,12 @@
     <message>
         <location filename="../main.py" line="613"/>
         <source>MainWindow.MenuBarQuickExportOption</source>
-        <translation>&amp;Quick Export File</translation>
+        <translation>Quick &amp;Export Animation</translation>
     </message>
     <message>
         <location filename="../main.py" line="614"/>
         <source>MainWindow.MenuBarExportOption</source>
-        <translation>&amp;Export File</translation>
+        <translation>Export Animation &amp;Sequence</translation>
     </message>
     <message>
         <location filename="../main.py" line="615"/>

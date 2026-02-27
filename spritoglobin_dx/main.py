@@ -2505,8 +2505,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self.framerate_choose_box = QtWidgets.QComboBox()
             self.framerate_choose_box.addItems([
-                self.strings["AnimationOptionFramerate"].format(50),
-                self.strings["AnimationOptionFramerate"].format(25),
+                self.strings["AnimationOptionFramerate"].format("60 / 50"),
+                self.strings["AnimationOptionFramerate"].format("30 / 25"),
             ])
             if use_low_framerate:
                 self.framerate_choose_box.setCurrentIndex(1)
@@ -2628,7 +2628,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         def tick_timer(self):
             framerate = self.framerate_choose_box.currentIndex()
-            # 50 fps, 25 fps
+            # 60 / 50 fps, 30 / 25 fps
             advance_amt = [ 1,  2][framerate]
 
             self.obj_data.increment_timers(advance_amt, animation_timer = True, color_timer = True)
@@ -2639,8 +2639,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.obj_data.set_timers(0, animation_timer = True, color_timer = True)
 
             framerate = self.framerate_choose_box.currentIndex()
-            # 50 fps, 25 fps
-            advance_spd = [20, 40][framerate]
+            # 60 fps, 30 fps
+            advance_spd = [17, 33][framerate]
             
             self.animation_timer.setInterval(round(advance_spd))
             self.update_preview()
@@ -2828,9 +2828,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 color_animation = int(self.color_anim_list_box.currentText())
 
             framerate = self.framerate_choose_box.currentIndex()
-            # 50 fps, 25 fps
+            # 60 / 50 fps, 30 / 25 fps
             advance_amt = [ 1,  2][framerate]
-            advance_spd = [20, 40][framerate]
             
             self.obj_data.init_timers()
 
@@ -2903,8 +2902,12 @@ class MainWindow(QtWidgets.QMainWindow):
             # export the file
             if file_filter == "GIF files (*.gif)":
                 disposal = 2
+                # 50 fps, 25 fps
+                advance_spd = [20, 40][framerate]
             else:
                 disposal = 0
+                # 60 fps, 30 fps
+                advance_spd = [17, 33][framerate]
             image_array[0].save(
                 path,
                 save_all      = True,
