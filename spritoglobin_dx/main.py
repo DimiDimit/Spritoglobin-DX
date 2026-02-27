@@ -2797,14 +2797,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
             path = config.get("NavigationPaths", "img_export_path")
             filename = f"{self.obj_data.game_id}_{self.obj_data.cached_object.name}_"
-            filename += "".join(f"{anim:02X}" for anim, _ in self.current_anim_list)
-            filename += ".gif"
+            filename += ".".join(f"{anim}" for anim, _ in self.current_anim_list)
 
-            path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            path, file_filter = QtWidgets.QFileDialog.getSaveFileName(
                 self,
                 self.strings["ExportChooseFileTitle"],
                 f"{path}/{filename}",
-                "GIF files (*.gif);;All Files (*)",
+                "Animated PNGs (*.png);;GIF files (*.gif);;All Files (*)",
             )
 
             if path == '':
@@ -2902,6 +2901,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 image_array[i] = image.crop(crop)
             
             # export the file
+            if file_filter == "GIF files (*.gif)":
+                disposal = 2
+            else:
+                disposal = 0
             image_array[0].save(
                 path,
                 save_all      = True,
@@ -2909,7 +2912,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 optimize      = True,
                 duration      = advance_spd,
                 loop          = 0,
-                disposal      = 2
+                disposal      = disposal,
             )
 
             self.setEnabled(True)

@@ -325,7 +325,7 @@
     <message>
         <location filename="../main.py" line="613"/>
         <source>MainWindow.MenuBarQuickExportOption</source>
-        <translation>&amp;Quick Export GIF</translation>
+        <translation>&amp;Quick Export File</translation>
     </message>
     <message>
         <location filename="../main.py" line="614"/>
