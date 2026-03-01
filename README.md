@@ -22,7 +22,7 @@ poetry install
 ```
 and run the program through Poetry:
 ```bash
-poetry run spritoglobin_dx
+poetry run spritoglobin-dx
 ```
 
 4. Clone the repository, install the dependencies through `pip` with:

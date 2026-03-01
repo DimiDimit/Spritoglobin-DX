@@ -3,9 +3,10 @@ from pathlib import Path
 from PySide6 import QtCore, QtWidgets
 
 
+APP_NAME = "spritoglobin_dx"
 APP_DISPLAY_NAME = "Spritoglobin DX"
 
-QtWidgets.QApplication.setApplicationName("spritoglobin_dx")
+QtWidgets.QApplication.setApplicationName(APP_NAME)
 QtWidgets.QApplication.setApplicationDisplayName(APP_DISPLAY_NAME)
 
 
@@ -51,6 +52,7 @@ THEME_COLOR_ICON_MASKS = {
 
 
 LANGUAGES = { # display name, NDS value, 3DS key
+    "None":  [None,           -1, "None"],
     "ja_JP": ["日本語",        0, "JP_ja"],
     "ko_KR": ["한국어",        0, "KR_ko"],
     "en_US": ["English (US)",  1, "US_en"],

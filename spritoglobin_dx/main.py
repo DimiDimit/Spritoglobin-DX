@@ -1,9 +1,15 @@
 import configparser
+import importlib.metadata
 import os
+import re
 import sys
+import time
+from importlib.metadata import PackageNotFoundError
 from functools import partial
 
 import numpy
+import requests
+from packaging.version import Version
 from PIL import Image
 from PySide6 import QtWidgets, QtGui, QtMultimedia
 
@@ -27,6 +33,7 @@ def main():
     window.move(window_geometry.topLeft())
     
     window.show()
+    window.check_for_updates(force = False)
     window.open_file()
 
     sys.exit(app.exec())
@@ -93,6 +100,7 @@ def grab_icon(index):
 
 
 class MainWindow(QtWidgets.QMainWindow):
+    # C:\Users\Marc\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\Local\spritoglobin_dx\config.ini
     def __init__(self, parent):
         super(MainWindow, self).__init__()
 
@@ -128,9 +136,11 @@ class MainWindow(QtWidgets.QMainWindow):
             config['UserPreferences'] = {}
         self.settings = dict(config['UserPreferences'])
 
-        self.change_lang(self.settings.get("language", "en_US"), reset_ui = False)
+        self.change_lang(self.settings.get("language", "None"), reset_ui = False)
         self.set_framerate(int(self.settings.get("framerate", 1)), reset_ui = False)
         self.toggle_mute(self.settings.get("muted", False))
+        self.toggle_update_check(self.settings.get("check_for_updates", None))
+        
 
 
         if not config.has_section('NavigationPaths'):
@@ -141,11 +151,99 @@ class MainWindow(QtWidgets.QMainWindow):
         config["NavigationPaths"]["img_export_path"] = paths.get("img_export_path", "")
 
         
+        config['UserPreferences'] = self.settings
         with open(CONFIG_DIR / "config.ini", "w") as config_file:
             config.write(config_file)
 
 
         self.init_ui()
+    
+
+    def check_for_updates(self, force = True):
+        config = configparser.ConfigParser()
+        config.read(str(CONFIG_DIR / "config.ini"))
+        if not config.has_section('UpdateCheckSettings'):
+            config['UpdateCheckSettings'] = {}
+        update_config = dict(config['UpdateCheckSettings'])
+
+        timestamp = float(update_config.get("timestamp", 0))
+
+        minimum_interval = 80000 # roughly 22.2 hours
+        too_often = time.time() - timestamp < minimum_interval
+
+        # pre-bail if necessary
+        if not (self.settings.get("check_for_updates", False) == "True" and not too_often) and not force:
+            return
+
+        # MOST OF THE FOLLOWING CODE WAS PROVIDED BY DIMIDIMIT, THE G.O.A.T.
+        
+        # get current version of app (poetry or compiled only)
+        try:
+            dist = importlib.metadata.distribution(APP_NAME)
+        except PackageNotFoundError:
+            return
+
+        # get latest release on github
+        repo_url = dict(x.split(', ', 1) for x in dist.metadata.get_all('Project-URL') or []).get('Repository')
+        if repo_url is None:
+            # `repository` is missing from pyproject.toml, abort
+            return
+        repo_match = re.fullmatch('https://github.com/(?P<owner>[^/]+)/(?P<repo>[^/]+)', repo_url)
+        if repo_match is None:
+            return
+            # Repository URL is malformed or repository is not on GitHub. Since we've hardcoded only GitHub, abort
+        try:
+            latest_release_resp = requests.get(f'https://api.github.com/repos/{repo_match.group('owner')}/{repo_match.group('repo')}/releases/latest', headers={'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'})
+            latest_release_resp.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            # Network error, or there are currently no releases in the repo
+            if force:
+                QtWidgets.QMessageBox.critical(
+                    self,
+                    self.strings["CheckUpdateErrorTitle"],
+                    self.strings["CheckUpdateErrorBlurb"].format(e),
+                )
+            return
+        latest_release = latest_release_resp.json()
+
+        # compare release versions and display a prompt
+        latest_ver = Version(latest_release['tag_name'])
+        current_ver = Version(dist.version)
+        skip_ver = Version(update_config.get("ignore_version", dist.version))
+
+        if latest_ver <= skip_ver and not force:
+            pass
+        elif latest_ver > current_ver:
+            information_box = QtWidgets.QMessageBox(self)
+            information_box.setTextFormat(QtCore.Qt.RichText)
+            information_box.setWindowTitle(self.strings["CheckUpdateNewVersionTitle"])
+            information_box.setText(self.strings["CheckUpdateNewVersionBlurb"].format(
+                f"<b>{latest_release['name']}</b>",
+                latest_release['body'],
+                f"<a href='{latest_release['html_url']}'>github.com</a>",
+            ).replace("\n", "<br>") + f"<br><br><span style='color: rgb(127, 127, 127);'>{self.strings["CheckUpdateNewVersionAssurance"]}</span>")
+
+            remind_button = QtWidgets.QPushButton(self.strings["CheckUpdateNewVersionRemindOption"])
+            ignore_button = QtWidgets.QPushButton(self.strings["CheckUpdateNewVersionIgnoreOption"])
+
+            information_box.addButton(remind_button, QtWidgets.QMessageBox.AcceptRole)
+            information_box.addButton(ignore_button, QtWidgets.QMessageBox.ActionRole)
+
+            information_box.exec()
+            check = information_box.buttonRole(information_box.clickedButton()) == QtWidgets.QMessageBox.ActionRole
+            if check:
+                update_config["ignore_version"] = latest_ver
+        elif force:
+            QtWidgets.QMessageBox.information(
+                self,
+                self.strings["CheckUpdateUpToDateTitle"],
+                self.strings["CheckUpdateUpToDateBlurb"],
+            )
+
+        update_config["timestamp"] = time.time()
+        config['UpdateCheckSettings'] = update_config
+        with open(CONFIG_DIR / "config.ini", "w") as config_file:
+            config.write(config_file)
 
 
     def init_ui(self):
@@ -199,10 +297,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         language_selector = QtWidgets.QMenu(self.strings["MenuBarOptionsLanguageOption"], self)
         for i, lang_key in enumerate(LANGUAGES):
-            if not (LANG_DIR / f'{lang_key}.qm').exists(): continue
+            if not (LANG_DIR / f'{lang_key}.qm').exists() and not lang_key == "None": continue
             lang = LANGUAGES[lang_key]
 
             lang_string = lang[0]
+            if lang_string is None:
+                lang_string = self.strings["MenuBarOptionsLanguageSystem"]
 
             #if lang[3]:
             #    lang_string += "⚠"
@@ -236,11 +336,26 @@ class MainWindow(QtWidgets.QMainWindow):
         audio_mute.setCheckable(True)
         audio_mute.setChecked(self.settings["muted"] == "True")
         audio_mute.toggled.connect(self.toggle_mute)
+
+        check_updates = QtGui.QAction(self.strings["MenuBarOptionsCheckUpdatesOption"], self)
+        check_updates.setCheckable(True)
+        check_updates.setChecked(self.settings["check_for_updates"] == "True")
+        check_updates.toggled.connect(self.toggle_update_check)
         
         menu_bar_options.addMenu(framerate_selector)
         menu_bar_options.addAction(audio_mute)
         menu_bar_options.addSeparator() # -----------------------------------------
         menu_bar_options.addMenu(language_selector)
+        menu_bar_options.addAction(check_updates)
+
+    
+        menu_bar_help = menu_bar.addMenu(self.strings["MenuBarHelpTitle"])
+
+        menu_bar_help.addAction(
+            # grab_icon(14),
+            self.strings["MenuBarHelpCheckUpdates"],
+            self.check_for_updates,
+        )
 
     
         mono_font = QtGui.QFont()
@@ -587,6 +702,18 @@ class MainWindow(QtWidgets.QMainWindow):
     def change_lang(self, lang_key, reset_ui = True):
         self.settings["language"] = lang_key
 
+        if lang_key == "None":
+            lang_key = QtCore.QLocale.system().name()
+    
+        default_path = QtCore.QLibraryInfo.path(QtCore.QLibraryInfo.LibraryPath.TranslationsPath)
+
+        self.default_translator = QtCore.QTranslator()
+        if self.default_translator.load(f"qtbase_{lang_key}.qm", default_path):
+            QtCore.QCoreApplication.installTranslator(self.default_translator)
+        else:
+            self.default_translator.load(f"qt_{lang_key}.qm", default_path)
+            QtCore.QCoreApplication.installTranslator(self.default_translator)
+
         self.translator_fallback = QtCore.QTranslator()
         if self.translator_fallback.load(str(LANG_DIR / 'en_US.qm')):
             self.parent.installTranslator(self.translator_fallback)
@@ -594,6 +721,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.translator = QtCore.QTranslator()
         if self.translator.load(str(LANG_DIR / f'{self.settings["language"]}.qm')):
             self.parent.installTranslator(self.translator)
+        
+        QtCore.QLocale.setDefault(QtCore.QLocale(lang_key))
 
         self.strings = {
             "AnimationTabsSpriteAnimTitle":       self.tr("MainWindow.AnimationTabsSpriteAnimTitle"),
@@ -608,6 +737,19 @@ class MainWindow(QtWidgets.QMainWindow):
             "ExportFailNoDataTitle":              self.tr("MainWindow.ExportFailNoDataTitle"),
             "ExportFailNoDataBlurb":              self.tr("MainWindow.ExportFailNoDataBlurb"),
 
+            "CheckUpdateQueryTitle":              self.tr("MainWindow.CheckUpdateQueryTitle"),
+            "CheckUpdateQueryBlurb":              self.tr("MainWindow.CheckUpdateQueryBlurb"),
+            "CheckUpdateQueryLinkString":         self.tr("MainWindow.CheckUpdateQueryLinkString"),
+            "CheckUpdateErrorTitle":              self.tr("MainWindow.CheckUpdateErrorTitle"),
+            "CheckUpdateErrorBlurb":              self.tr("MainWindow.CheckUpdateErrorBlurb"),
+            "CheckUpdateNewVersionTitle":         self.tr("MainWindow.CheckUpdateNewVersionTitle"),
+            "CheckUpdateNewVersionBlurb":         self.tr("MainWindow.CheckUpdateNewVersionBlurb"),
+            "CheckUpdateNewVersionAssurance":     self.tr("MainWindow.CheckUpdateNewVersionAssurance"),
+            "CheckUpdateNewVersionRemindOption":  self.tr("MainWindow.CheckUpdateNewVersionRemindOption"),
+            "CheckUpdateNewVersionIgnoreOption":  self.tr("MainWindow.CheckUpdateNewVersionIgnoreOption"),
+            "CheckUpdateUpToDateTitle":           self.tr("MainWindow.CheckUpdateUpToDateTitle"),
+            "CheckUpdateUpToDateBlurb":           self.tr("MainWindow.CheckUpdateUpToDateBlurb"),
+
             "MenuBarFileTitle":                   self.tr("MainWindow.MenuBarFileTitle"),
             "MenuBarFileOpenOption":              self.tr("MainWindow.MenuBarOpenOption"),
             "MenuBarFileCloseOption":             self.tr("MainWindow.MenuBarCloseOption"),
@@ -616,9 +758,13 @@ class MainWindow(QtWidgets.QMainWindow):
             "MenuBarFileQuitOption":              self.tr("MainWindow.MenuBarFileQuitOption"),
             "MenuBarOptionsTitle":                self.tr("MainWindow.MenuBarOptionsTitle"),
             "MenuBarOptionsLanguageOption":       self.tr("MainWindow.MenuBarOptionsLanguageOption"),
+            "MenuBarOptionsLanguageSystem":       self.tr("MainWindow.MenuBarOptionsLanguageSystem"),
             "MenuBarOptionsMuteOption":           self.tr("MainWindow.MenuBarOptionsMuteOption"),
             "MenuBarOptionsFramerateOption":      self.tr("MainWindow.MenuBarOptionsFramerateOption"),
             "MenuBarOptionsFramerate":            self.tr("MainWindow.MenuBarOptionsFramerate"),
+            "MenuBarOptionsCheckUpdatesOption":   self.tr("MainWindow.MenuBarOptionsCheckUpdatesOption"),
+            "MenuBarHelpTitle":                   self.tr("MainWindow.MenuBarHelpTitle"),
+            "MenuBarHelpCheckUpdates":            self.tr("MainWindow.MenuBarHelpCheckUpdates"),
 
             "SpritePartSetSelectorTitle":         self.tr("MainWindow.SpritePartSetSelectorTitle"),
             "SpritePartSelectorTitle":            self.tr("MainWindow.SpritePartSelectorTitle"),
@@ -678,6 +824,22 @@ class MainWindow(QtWidgets.QMainWindow):
         self.settings["muted"] = str(muted)
 
         self.write_config()
+    
+    def toggle_update_check(self, check):
+        if check is None:
+            check_updates_box = QtWidgets.QMessageBox(self)
+            check_updates_box.setTextFormat(QtCore.Qt.RichText)
+            check_updates_box.setWindowTitle(self.strings["CheckUpdateQueryTitle"])
+            check_updates_box.setText(self.strings["CheckUpdateQueryBlurb"].format(
+                f"<a href='https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement'>{self.strings["CheckUpdateQueryLinkString"]}</a>"
+            ).replace("\n", "<br>"))
+            check_updates_box.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+
+            check = check_updates_box.exec() == QtWidgets.QMessageBox.Yes
+
+        self.settings["check_for_updates"] = str(check)
+
+        self.write_config()
 
     
     def change_file(self, sort_contents = False):
@@ -715,11 +877,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
             for cellanim in cellanims:
                 self.obj_list_box.addItem(self.obj_data.cellanim_files[cellanim].name)
-
-            # setting the framerate based on the current game is a fun idea but i'm afraid it'd just become annoying
-            #
-            # if game_id == "ML3R": self.set_framerate(1) # 30fps
-            # else:                 self.set_framerate(0) # 60fps
         else:
             self.obj_list_box.clear()
 
@@ -2803,7 +2960,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self,
                 self.strings["ExportChooseFileTitle"],
                 f"{path}/{filename}",
-                "Animated PNGs (*.png);;GIF files (*.gif);;All Files (*)",
+                "GIF files (*.gif);;Animated PNGs (*.png);;All Files (*)",
             )
 
             if path == '':
