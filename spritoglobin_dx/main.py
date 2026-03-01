@@ -173,6 +173,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # pre-bail if necessary
         if not (self.settings.get("check_for_updates", False) == "True" and not too_often) and not force:
+            print("check_for_updates returned due to conditions prohibiting an automatic check")
             return
 
         # MOST OF THE FOLLOWING CODE WAS PROVIDED BY DIMIDIMIT, THE G.O.A.T.
@@ -181,17 +182,20 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             dist = importlib.metadata.distribution(APP_NAME)
         except PackageNotFoundError:
+            print("check_for_updates returned due to PackageNotFoundError")
             return
 
         # get latest release on github
         repo_url = dict(x.split(', ', 1) for x in dist.metadata.get_all('Project-URL') or []).get('Repository')
         if repo_url is None:
             # `repository` is missing from pyproject.toml, abort
+            print("check_for_updates returned due to lacking a repository value in pyproject.toml")
             return
         repo_match = re.fullmatch('https://github.com/(?P<owner>[^/]+)/(?P<repo>[^/]+)', repo_url)
         if repo_match is None:
-            return
             # Repository URL is malformed or repository is not on GitHub. Since we've hardcoded only GitHub, abort
+            print("check_for_updates returned due to bad GitHub link")
+            return
         try:
             latest_release_resp = requests.get(f'https://api.github.com/repos/{repo_match.group('owner')}/{repo_match.group('repo')}/releases/latest', headers={'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'})
             latest_release_resp.raise_for_status()
