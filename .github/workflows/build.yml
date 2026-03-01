@@ -36,7 +36,9 @@ jobs:
           nuitka-version: main
           script-name: spritoglobin_dx
           mode: app
-          enable-plugins: pyside6
+          enable-plugins: |
+            pyside6
+            numpy
           user-package-configuration-file: "spritoglobin_dx.nuitka-package.config.yml"
           windows-console-mode: force
           windows-icon-from-ico: "spritoglobin_dx/files/ico_sprito_dx.ico"
